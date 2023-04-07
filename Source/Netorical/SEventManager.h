@@ -65,8 +65,10 @@ private:
 
 
 public:	
+	// Push an event to publish
 	void PushEvent(FString EventID);
-	bool EventCannotBeCalled(int32);
+	// Check can event be publish
+	bool EventCannotBePublised(int32);
 	
 	//Timer Controlls
 	void StartTimer(FTimerHandle &Timer, void (USEventManager::*InTimeMethod)(), float MinDelay, float MaxDelay);
@@ -78,7 +80,8 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
-
+	
+	// Publish an event
 	void PublishEvent();
 
 private:

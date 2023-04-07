@@ -58,7 +58,7 @@ void USEventManager::PushEvent(FString EventID)
 }
 
 //Event precondition method for uncallable event
-bool USEventManager::EventCannotBeCalled(int32 Number)
+bool USEventManager::EventCannotBePublised(int32 Number)
 {
 	return false;
 }
