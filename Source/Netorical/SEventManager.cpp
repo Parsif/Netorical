@@ -8,7 +8,7 @@ USEventManager::USEventManager()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 
 	//load events data from datatable
 	static ConstructorHelpers::FObjectFinder<UDataTable> EventsDataTable_Object(TEXT("DataTable'/Game/DataTable/Events_DataTable.Events_DataTable'"));
@@ -23,16 +23,38 @@ void USEventManager::BeginPlay()
 {
 	Super::BeginPlay();
 
-	USEventManager::StartTimer(LocalTimer, &USEventManager::CallEvent, 1.0f, 1.0f);
+	USEventManager::StartTimer(EventTimerManager, &USEventManager::PublishEvent, MinEventTimerDelay, MaxEventTimerDelay);
 }
 
-
-// Called every frame
-void USEventManager::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+// Event publising methods
+void USEventManager::PublishEvent()
 {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	FString SelectedEventName;
 
-	// ...
+	do {
+		int32 RandomEvent = FMath::RandRange(0, EventsDataTable->GetRowNames().GetAllocatedSize() / EventsDataTable->GetRowNames().GetTypeSize() - 1);
+		SelectedEventName = EventsDataTable->GetRowNames()[RandomEvent].ToString();
+	} while (CheckEventPreconditions(SelectedEventName) != true);
+
+	/*                                    
+	
+	There will be call Event logic
+	
+	*/
+
+	USEventManager::StartTimer(EventTimerManager, &USEventManager::PublishEvent, MinEventTimerDelay, MaxEventTimerDelay);
+}
+
+void USEventManager::PushEvent(FString EventID)
+{
+	FEventDataTable* Event = EventsDataTable->FindRow<FEventDataTable>(*FString(EventID), TEXT("GENERAL"));
+
+	if (Event == nullptr)
+	{
+		return;
+	}
+
+	// there will be call event logic
 }
 
 //Event precondition method for uncallable event
@@ -41,22 +63,10 @@ bool USEventManager::EventCannotBeCalled(int32 Number)
 	return false;
 }
 
-void USEventManager::CallEvent()
+bool USEventManager::CheckEventPreconditions(FString EventID)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Event"));
-
-	int32 RandomEvent = FMath::RandRange(0, EventsDataTable->GetRowNames().GetAllocatedSize() / EventsDataTable->GetRowNames().GetTypeSize());
-	FString SelectedEvnetName = EventsDataTable->GetRowNames()[RandomEvent].ToString();
-
-	/*                                    
-	
-	There will be call Event logic
-	
-	*/
-
-	UE_LOG(LogTemp, Warning, TEXT("Even: %s"), *FString(SelectedEvnetName));
-
-	USEventManager::StartTimer(LocalTimer, &USEventManager::CallEvent, 1.0f, 1.0f);
+	// there will be check precondition logic
+	return true;
 }
 
 //Timers controlls

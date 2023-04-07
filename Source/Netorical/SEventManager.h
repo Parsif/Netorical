@@ -55,24 +55,19 @@ public:
 	USEventManager();
 
 private:
-	// DataTable of Events
-	UDataTable* EventsDataTable;
-	// Timer for local events
-	FTimerHandle LocalTimer;
-	// Timer for region events
-	FTimerHandle RegionTimer;
-	// Timer for global and state events
-	FTimerHandle GlobalTimer;
+	const float MinEventTimerDelay = 1.0f; // 300.0f
+	const float MaxEventTimerDelay = 1.0f; // 900.0f
 
-protected:
-	// Called when the game starts
-	virtual void BeginPlay() override;
+
+	UDataTable* EventsDataTable;
+	FTimerHandle EventTimerManager;
+
+
 
 public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	void CallEvent();
-
+	void PushEvent(FString EventID);
+	bool EventCannotBeCalled(int32);
+	
 	//Timer Controlls
 	void StartTimer(FTimerHandle &Timer, void (USEventManager::*InTimeMethod)(), float MinDelay, float MaxDelay);
 	void PauseTimer(FTimerHandle &Timer);
@@ -80,6 +75,12 @@ public:
 	void ClearTimer(FTimerHandle &Timer);
 	void RestartTimer(FTimerHandle &Timer, void (USEventManager::* InTimeMethod)(), float MinDelay, float MaxDelay);
 
+protected:
+	// Called when the game starts
+	virtual void BeginPlay() override;
+
+	void PublishEvent();
+
 private:
-	bool EventCannotBeCalled(int32);
+	bool CheckEventPreconditions(FString EventID);
 };
