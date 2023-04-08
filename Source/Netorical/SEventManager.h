@@ -51,20 +51,18 @@ class NETORICAL_API USEventManager : public UActorComponent
 	GENERATED_BODY()
 
 public:	
-	// Sets default values for this component's properties
-	USEventManager();
+	FTimerHandle EventTimerManager;
 
 private:
 	const float MinEventTimerDelay = 1.0f; // 300.0f
 	const float MaxEventTimerDelay = 1.0f; // 900.0f
 
-
 	UDataTable* EventsDataTable;
-	FTimerHandle EventTimerManager;
-
-
 
 public:	
+	// Sets default values for this component's properties
+	USEventManager();
+
 	// Push an event to publish
 	void PushEvent(FString EventID);
 	// Check can event be publish
