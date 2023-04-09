@@ -2,6 +2,9 @@
 
 
 #include "SWorld.h"
+#include <Engine.h>
+#include "NetoricalSaveGame.h"
+#include "NetoricalGameInstance.h"
 
 // Sets default values for this component's properties
 USWorld::USWorld()
@@ -20,27 +23,35 @@ void USWorld::BeginPlay()
 	Super::BeginPlay();
 
 	EventManagerComp = GetOwner()->FindComponentByClass<USEventManager>();
+	GameInstanceObj = Cast<UNetoricalGameInstance>(UGameplayStatics::GetGameInstance(GetWorld()));
 
-	if (LoadDate.IsEmpty())
+	UE_LOG(LogTemp, Warning, TEXT("LoadData: %s"), *FString(GameInstanceObj->LoadGameData()->SaveDate));
+
+	if (GameInstanceObj->LoadGameData()->SaveDate.IsEmpty())
 		WorldTime.ParseIso8601(*FString(WorldFirstDay), WorldTime);
 	else
-		WorldTime.ParseIso8601(*FString(LoadDate), WorldTime);
+		WorldTime.ParseIso8601(*GameInstanceObj->LoadGameData()->SaveDate, WorldTime);
 
 	UE_LOG(LogTemp, Warning, TEXT("%s"), *WorldTime.ToString());
 
-	IncreaseWorldTimeSpeed(5.0f);
 	GetWorld()->GetTimerManager().SetTimer(WorldTImeTimerHandle, this, &USWorld::EndOfDay, DayLenght);
+	GetWorld()->GetTimerManager().SetTimer(AutoSaveTimerHandle, this, &USWorld::AutoSaveGame, AutoSaveCycle);
 }
 
-// World time
+/*
+	World time 
+*/
 void USWorld::EndOfDay()
 {
-	NextDay();
 
 	/*
 		There will be smt
 	*/
-	DecreaseWorldTimeSpeed(5.0f);
+
+	//SaveWorldData();
+
+	NextDay();
+
 	GetWorld()->GetTimerManager().SetTimer(WorldTImeTimerHandle, this, &USWorld::EndOfDay, DayLenght);
 }
 
@@ -54,49 +65,61 @@ FString USWorld::Now()
 	return WorldTime.ToString();
 }
 
-void USWorld::IncreaseWorldTimeSpeed(float x)
+void USWorld::IncreaseWorldTimeSpeed(float Factor)
 {
-	DayLenght /= x;
+	DayLenght /= Factor;
 }
 
-void USWorld::DecreaseWorldTimeSpeed(float x)
+void USWorld::DecreaseWorldTimeSpeed(float Factor)
 {
-	DayLenght *= x;
+	DayLenght *= Factor;
 }
 
 void USWorld::NextDay()
 {
 	WorldTime += FTimespan(1, 0, 0, 0);
-	UE_LOG(LogTemp, Warning, TEXT("%s"), *WorldTime.ToString());
+	UE_LOG(LogTemp, Warning, TEXT("%s"), *WorldTime.ToIso8601());
 }
 
 void USWorld::PauseWorld()
 {
 	GetWorld()->GetTimerManager().PauseTimer(WorldTImeTimerHandle);
 	EventManagerComp->PauseTimer(EventManagerComp->EventTimerManager);
+	GetWorld()->GetTimerManager().PauseTimer(AutoSaveTimerHandle);
 }
 
 void USWorld::UnPauseWorld()
 {
 	GetWorld()->GetTimerManager().UnPauseTimer(WorldTImeTimerHandle);
 	EventManagerComp->UnPauseTimer(EventManagerComp->EventTimerManager);
+	GetWorld()->GetTimerManager().UnPauseTimer(AutoSaveTimerHandle);
 }
 
-//Player Company
-void USWorld::SetCompany(int32 Money, int32 Income, int32 Customers, int32 CustomersGrowth, TMap<FString, float> AppliedEffects, TMap<FString, bool> Researched, TMap<FString, bool> HubsBuilded, int32 MaintenanceCost)
-{
-	Company.Money = Money;
-	Company.Income = Income;
-	Company.Customers = Customers;
-	Company.CustomersGrowth = CustomersGrowth;
-	Company.AppliedEffects = AppliedEffects;
-	Company.Researched = Researched;
-	Company.HubsBuilded = HubsBuilded;
-	Company.MaintenanceCost = MaintenanceCost;
-}
 
-//idk yet will it be needed
+/*
+	Company
+*/
 void USWorld::CalcStatistics()
 {
 	//There will be logic of calculation income, maintenance cost, customers growth by hubs and applied effects.
+}
+
+/*
+	Save/Load
+*/
+void USWorld::SaveWorldData()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Save game"));
+	GameInstanceObj->SaveGameData(WorldTime.ToIso8601());
+}
+
+void USWorld::LoadWorldData()
+{
+	WorldTime.ParseIso8601(*FString(GameInstanceObj->LoadGameData()->SaveDate), WorldTime);
+}
+
+void USWorld::AutoSaveGame()
+{
+	SaveWorldData();
+	GetWorld()->GetTimerManager().SetTimer(AutoSaveTimerHandle, this, &USWorld::AutoSaveGame, AutoSaveCycle);
 }
